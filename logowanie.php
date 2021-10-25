@@ -1,39 +1,58 @@
 <?php
+
 session_start();
 
-$login = $_POST['login'] ?? '';
-$haslo = $_POST['haslo'] ?? '';
+if (isset($_POST['zaloguj'])) {
+	$pdo = new PDO('mysql:host=localhost;dbname=test', 'root', '');
+
+    // ALTER TABLE `uzytkownicy` ADD `loginAttempts` INT NOT NULL DEFAULT '0' AFTER `haslo`) 
+
+	$stmt = $pdo->prepare("SELECT * FROM uzytkownicy WHERE login = :login AND haslo = :haslo");
+	$stmt->execute(['login' => $_POST['login'], 'haslo' => $_POST['haslo']]);
+	$wynik = $stmt->fetch();
+	
+    $loginAttempts = $pdo->prepare("UPDATE uzytkownicy SET loginAttempts = :cnt WHERE login = :login");
 
 
-if ($login == 'admin' && $haslo == 'test') {
-    // poprawne logowanie
-    $_SESSION['zalogowany'] = true;
-
-    header("Location: tekst.php");
-    exit();
-} else if($login != '' && $haslo != ''){
-   echo '<h1> Podaj prawidlowy login lub haslo </h1>';
+	if ($wynik) {
+        if($wynik['haslo'] ==$_POST['haslo'] &&  $wynik['loginAttempts'] <3 ){
+		$_SESSION['zalogowany'] = 'tak';
+		$_SESSION['id'] = $wynik['id'];
+		header("Location: index.php");
+		exit();
+        }else{
+            $loginAttempts->execute(['login' => $_POST['login'],'cnt' => $wynik['loginAttempts'] + 1 ]);
+        }
+	} else {
+		$komunikat = "Wprowadzono zły login lub hasło.";
+	}
 }
 ?>
-<!doctype html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Logowanie</title>
-</head>
-
-<body>
-   
-    <form action="" method="post">
-        <input type="text" name="login" placeholder="Login">
-        <br>
-        <input type="password" name="haslo" placeholder="Hasło">
-        <br>
-        <button type="submit">Zaloguj</button>
-    </form>
-</body>
-
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Logowanie</title>
+        <meta charset="utf-8">
+    </head>
+    <body>
+		<?php if(!empty($komunikat)): ?>
+			<p style="font-weight: bold; color: red;"><?=$komunikat ?></p>
+		<?php endif; ?>
+		
+        <form method="post" action="">
+            <table>
+                <tr>
+                    <td>Login</td>
+                    <td><input type="text" name="login" /></td>
+                </tr>
+                <tr>
+                    <td>Hasło</td>
+                    <td><input type="password" name="haslo" /></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><input type="submit" name="zaloguj" value="Zaloguj" /></td>
+                </tr>
+            </table>
+        </form>
+    </body>
 </html>
