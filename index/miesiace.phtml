@@ -1,0 +1,10 @@
+
+<h1>Miesiace</h1>
+<ul>
+    <?php foreach ($miesiace as $miesiac => $kolor) : // dostęp do zmiennej widoku bezpośrednio ?>
+        <li>
+            <?= $miesiac?>:
+            <strong><?= $kolor ?></strong>
+        </li>
+    <?php endforeach; ?>
+</ul>
